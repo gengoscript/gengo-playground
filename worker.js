@@ -101,7 +101,7 @@ self.onmessage = async (evt) => {
     let memory = null;
     let outputBuf = "";
 
-    // env.gengo_write — capture stdout/stderr from the engine
+    // env callbacks — I/O bridge between engine and playground
     const env = {
       gengo_write(ptr, len, is_stderr) {
         const str = new TextDecoder().decode(
@@ -114,6 +114,8 @@ self.onmessage = async (evt) => {
           post("stdout", { text: str });
         }
       },
+      // Playground has no stdin; signal EOF on every read.
+      gengo_read: () => -1,
     };
 
     const res = await fetch("./gengo-engine.wasm", { cache: "no-store" });
