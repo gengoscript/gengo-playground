@@ -122,6 +122,10 @@ self.onmessage = async (evt) => {
     const wasm = await WebAssembly.instantiateStreaming(res, {
       wasi_snapshot_preview1: wasi,
       env,
+      gengo_host: {
+        // Playground has no host modules; return unsupported (1) for all calls.
+        gengo_native_call: () => 1,
+      },
     });
 
     memory = wasm.instance.exports.memory;
