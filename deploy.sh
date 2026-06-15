@@ -16,8 +16,14 @@ fi
 
 cp "$WASM_SRC" gengo-engine.wasm
 
-V=$(sha256sum gengo-engine.wasm | cut -c1-8)
-perl -i -pe "s/\?v=[0-9a-f]{8}/?v=$V/g" index.html playground.js
+WASM_V=$(sha256sum gengo-engine.wasm | cut -c1-8)
+WORKER_V=$(sha256sum worker.js | cut -c1-8)
 
-echo "updated gengo-engine.wasm  (cache version: $V)"
+# Update WASM cache-bust hash in index.html and playground.js
+perl -i -pe "s/gengo-engine\.wasm\?v=[0-9a-f]{8}/gengo-engine.wasm?v=$WASM_V/g" index.html playground.js
+
+# Update worker.js cache-bust hash in playground.js
+perl -i -pe "s/worker\.js\?v=[0-9a-f]{8}/worker.js?v=$WORKER_V/g" playground.js
+
+echo "updated gengo-engine.wasm  (wasm: $WASM_V, worker: $WORKER_V)"
 echo "commit and push to deploy"
