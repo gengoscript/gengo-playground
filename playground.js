@@ -5,6 +5,7 @@ const shareBtn = document.getElementById("share");
 const examplesEl = document.getElementById("examples");
 const statusEl = document.getElementById("status");
 const execInfoEl = document.getElementById("exec-info");
+const versionEl = document.getElementById("version");
 
 const encoder = new TextEncoder();
 
@@ -204,7 +205,7 @@ function stopRun(reason) {
 function startWorker(script) {
   startTime = performance.now();
   execInfoEl.textContent = "";
-  worker = new Worker("./worker.js?v=f63041e0", { type: "module" });
+  worker = new Worker("./worker.js?v=b8cef63d", { type: "module" });
   let hasStderr = false;
 
   worker.onmessage = function (evt) {
@@ -212,6 +213,7 @@ function startWorker(script) {
     if (msg.kind === "stdout") { appendOutput(msg.text); return; }
     if (msg.kind === "stderr") { hasStderr = true; appendOutput(msg.text, true); return; }
     if (msg.kind === "done") { setIdle(hasStderr ? "Error" : "Success", hasStderr); return; }
+    if (msg.kind === "version") { if (versionEl) versionEl.textContent = "Gengo v" + msg.version + " (WASM)"; return; }
     if (msg.kind === "error") { appendOutput((msg.error || "unknown error") + "\n", true); setIdle("Error", true); return; }
   };
 

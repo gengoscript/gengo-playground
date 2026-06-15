@@ -130,6 +130,12 @@ self.onmessage = async (evt) => {
 
     memory = wasm.instance.exports.memory;
 
+    const verPtr = wasm.instance.exports.gengo_engine_version();
+    const verBytes = new Uint8Array(memory.buffer, verPtr);
+    const verEnd = verBytes.indexOf(0);
+    const version = new TextDecoder().decode(verBytes.slice(0, verEnd));
+    post("version", { version });
+
     const handle = wasm.instance.exports.engine_init();
     if (handle === 0) throw new Error("engine_init failed");
 
