@@ -71,10 +71,10 @@ func generate(grid any) {
 
         nris := []
         ncis := []
-        if ri - 2 >= 0    && gget(grid, Row(ri-2), Col(ci)) == WALL { nris = std.core.append(nris, ri-2); ncis = std.core.append(ncis, ci)    }
-        if ri + 2 < ROWS  && gget(grid, Row(ri+2), Col(ci)) == WALL { nris = std.core.append(nris, ri+2); ncis = std.core.append(ncis, ci)    }
-        if ci - 2 >= 0    && gget(grid, Row(ri), Col(ci-2)) == WALL { nris = std.core.append(nris, ri);   ncis = std.core.append(ncis, ci-2)  }
-        if ci + 2 < COLS  && gget(grid, Row(ri), Col(ci+2)) == WALL { nris = std.core.append(nris, ri);   ncis = std.core.append(ncis, ci+2)  }
+        if ri - 2 >= 0    and gget(grid, Row(ri-2), Col(ci)) == WALL { nris = std.core.append(nris, ri-2); ncis = std.core.append(ncis, ci)    }
+        if ri + 2 < ROWS  and gget(grid, Row(ri+2), Col(ci)) == WALL { nris = std.core.append(nris, ri+2); ncis = std.core.append(ncis, ci)    }
+        if ci - 2 >= 0    and gget(grid, Row(ri), Col(ci-2)) == WALL { nris = std.core.append(nris, ri);   ncis = std.core.append(ncis, ci-2)  }
+        if ci + 2 < COLS  and gget(grid, Row(ri), Col(ci+2)) == WALL { nris = std.core.append(nris, ri);   ncis = std.core.append(ncis, ci+2)  }
 
         cnt := std.core.len(nris)
         if cnt == 0 {
@@ -115,7 +115,7 @@ func bfs(grid any, parentR any, parentC any) {
         qr  = std.core.remove(qr, 0)
         qc  = std.core.remove(qc, 0)
 
-        if ri == ROWS - 2 && ci == COLS - 2 { break }
+        if ri == ROWS - 2 and ci == COLS - 2 { break }
 
         dris := [ri-1, ri+1, ri,   ri  ]
         dcis := [ci,   ci,   ci-1, ci+1]
@@ -124,7 +124,7 @@ func bfs(grid any, parentR any, parentC any) {
             nri := int(dris[i])
             nci := int(dcis[i])
             i   += 1
-            if nri < 0 || nri >= ROWS || nci < 0 || nci >= COLS { continue }
+            if nri < 0 or nri >= ROWS or nci < 0 or nci >= COLS { continue }
             nr := Row(nri)
             nc := Col(nci)
             if gget(grid, nr, nc) == WALL { continue }
@@ -144,7 +144,7 @@ func markPath(grid any, parentR any, parentC any) int {
     ri    := ROWS - 2
     ci    := COLS - 2
     steps := 0
-    for !(ri == 1 && ci == 1) {
+    for not (ri == 1 and ci == 1) {
         k  := key(Row(ri), Col(ci))
         grid[k] = PATH
         pri := int(parentR[k])

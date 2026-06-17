@@ -25,7 +25,7 @@ func label(d Day) string {
 days := [Day.monday, Day.wednesday, Day.friday, Day.saturday, Day.sunday]
 for d in days {
     marker := ""
-    if d == Day.saturday || d == Day.sunday {
+    if d == Day.saturday or d == Day.sunday {
         marker = " (weekend)"
     }
     std.io.printf("%s%s\n", label(d), marker)

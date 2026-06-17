@@ -123,7 +123,7 @@ func runSim(initialWorkers []Worker, initialJobs []Job, maxTicks Tick) Stats {
                         continue
                     }
                     tgt := now + p.nextDelay(job.attempts)
-                    if !std.core.has(delayed, tgt) { delayed[tgt] = [] }
+                    if not std.core.has(delayed, tgt) { delayed[tgt] = [] }
                     delayed[tgt] = std.core.append(delayed[tgt], job)
                     st.retried += 1
                     continue
