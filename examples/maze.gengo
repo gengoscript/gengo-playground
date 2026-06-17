@@ -37,13 +37,13 @@ func key(r Row, c Col) string {
     return std.conv.to_string(int(r)) + "," + std.conv.to_string(int(c))
 }
 
-func gget(grid any, r Row, c Col) int {
+func gget(grid map[string]int, r Row, c Col) int {
     v := grid[key(r, c)]
     if v == null { return WALL }
     return int(v)
 }
 
-func makeGrid() any {
+func makeGrid() map[string]int {
     grid := {}
     r := 0
     for r < ROWS {
@@ -59,7 +59,7 @@ func makeGrid() any {
 
 // Iterative DFS — carves a perfect maze by randomly visiting unvisited
 // cell-neighbours two steps away and removing the wall between them.
-func generate(grid any) {
+func generate(grid map[string]int) {
     grid[key(Row(1), Col(1))] = OPEN
     stackR := [1]
     stackC := [1]
@@ -100,7 +100,7 @@ func generate(grid any) {
 }
 
 // BFS from (1,1) to (ROWS-2, COLS-2); records parent of each visited cell.
-func bfs(grid any, parentR any, parentC any) {
+func bfs(grid map[string]int, parentR map[string]int, parentC map[string]int) {
     visited := {}
     sk      := key(Row(1), Col(1))
     visited[sk] = true
@@ -140,7 +140,7 @@ func bfs(grid any, parentR any, parentC any) {
 }
 
 // Walk the parent chain from end back to start, marking the solution path.
-func markPath(grid any, parentR any, parentC any) int {
+func markPath(grid map[string]int, parentR map[string]int, parentC map[string]int) int {
     ri    := ROWS - 2
     ci    := COLS - 2
     steps := 0
@@ -158,7 +158,7 @@ func markPath(grid any, parentR any, parentC any) int {
     return steps
 }
 
-func printMaze(grid any) {
+func printMaze(grid map[string]int) {
     r := 0
     for r < ROWS {
         c := 0
