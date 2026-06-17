@@ -49,14 +49,17 @@ require(['vs/editor/editor.main'], function () {
   monaco.languages.register({ id: 'gengo' });
   monaco.languages.setMonarchTokensProvider('gengo', {
     keywords: [
-      'true', 'false', 'null', 'if', 'else', 'for', 'in', 'switch', 'case',
-      'default', 'return', 'func', 'struct', 'interface', 'type', 'subtype', 'variant',
-      'range', 'enum', 'import', 'const', 'break', 'continue', 'defer', 'assert', 'trap'
+      'true', 'false', 'null',
+      'if', 'else', 'for', 'in', 'switch', 'case', 'default', 'break', 'continue', 'return',
+      'func', 'struct', 'interface', 'type', 'subtype', 'variant', 'enum', 'const', 'var', 'pub',
+      'and', 'or', 'not',
+      'import', 'defer', 'assert', 'trap', 'test',
+      'range', 'cycle', 'predicate', 'message'
     ],
-    typeKeywords: ['int', 'float', 'bool', 'string', 'rune', 'any', 'error'],
+    typeKeywords: ['int', 'float', 'decimal', 'bool', 'string', 'rune', 'any', 'error'],
     operators: [
-      '=', '>', '<', '!', '~', '?', ':', '==', '<=', '>=', '!=',
-      '&&', '||', '++', '--', '+', '-', '*', '/', '&', '|', '^', '%',
+      '=', '>', '<', '~', '?', ':', '==', '<=', '>=', '!=',
+      '++', '--', '+', '-', '*', '/', '&', '|', '^', '%',
       '<<', '>>', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', ':=', '..', '...'
     ],
     symbols: /[=><!~?:&|+\-*\/\^%]+/,
