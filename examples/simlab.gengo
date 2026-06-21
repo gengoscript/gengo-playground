@@ -111,10 +111,10 @@ func runSim(initialWorkers []Worker, initialJobs []Job, maxTicks Tick) Stats {
         queue = std.core.remove(queue, 0)
 
         switch ev {
-            case .spawn(w) {
+            case .spawn as w {
                 workers[std.conv.to_string(int(w.id))] = w
             }
-            case .submit(job) {
+            case .submit as job {
                 wk := std.conv.to_string(int(job.owner))
                 w := workers[wk]
                 if w.busy {
@@ -132,7 +132,7 @@ func runSim(initialWorkers []Worker, initialJobs []Job, maxTicks Tick) Stats {
                 workers[wk] = w
                 queue = std.core.append(queue, Event.finish(job.owner))
             }
-            case .finish(id) {
+            case .finish as id {
                 wk := std.conv.to_string(int(id))
                 w := workers[wk]
                 w.busy = false

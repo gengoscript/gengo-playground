@@ -16,11 +16,11 @@ type Shape variant {
 
 func describe(s Shape) {
     switch s {
-        case .circle(c) {
+        case .circle as c {
             std.io.printf("circle  radius=%.1f  area=%.2f\n",
                 c.radius, 3.14159 * c.radius * c.radius)
         }
-        case .rect(r) {
+        case .rect as r {
             std.io.printf("rect    %.1fx%.1f  area=%.2f\n",
                 r.w, r.h, r.w * r.h)
         }
