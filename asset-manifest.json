@@ -1,4 +1,4 @@
 {
   "worker": "./worker.js?v=2faa625c",
-  "wasm": "./gengo-engine.wasm?v=ef1feff8"
+  "wasm": "./gengo-engine.wasm?v=f8510a82"
 }
