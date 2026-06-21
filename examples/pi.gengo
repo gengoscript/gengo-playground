@@ -1,0 +1,96 @@
+// Compute π to N decimal places using Machin's formula with digit arrays.
+// π/4 = 4·arctan(1/5) - arctan(1/239)
+//
+// Each decimal digit lives in its own array slot, so all arithmetic is
+// exact integer long-division — no floating-point precision limit. Each
+// arctan is evaluated term by term; successive terms shrink by x² so
+// convergence is fast. Increase N freely; runtime is O(N²).
+// https://en.wikipedia.org/wiki/Machin-like_formula
+
+std := import("std")
+
+const N    := 50      // decimal places — change me
+const PREC := N + 20  // guard slots absorb rounding in the last digits
+
+func make_zero() []int {
+    a := []
+    for i := 0; i < PREC; i++ { a = std.core.append(a, 0) }
+    return a
+}
+
+func is_zero(a []int) bool {
+    for d in a { if d != 0 { return false } }
+    return true
+}
+
+func add_into(a []int, b []int) {
+    carry := 0
+    for i := PREC - 1; i >= 0; i-- {
+        s    := a[i] + b[i] + carry
+        a[i]  = s % 10
+        carry = int(s / 10)
+    }
+}
+
+func sub_into(a []int, b []int) {
+    borrow := 0
+    for i := PREC - 1; i >= 0; i-- {
+        d := a[i] - b[i] - borrow
+        if d < 0 {
+            a[i]   = d + 10
+            borrow = 1
+        } else {
+            a[i]   = d
+            borrow = 0
+        }
+    }
+}
+
+func div_by(a []int, n int) []int {
+    r := make_zero()
+    carry := 0
+    for i := 0; i < PREC; i++ {
+        val  := carry * 10 + a[i]
+        r[i]  = int(val / n)
+        carry = val % n
+    }
+    return r
+}
+
+func mul_by(a []int, n int) []int {
+    r := make_zero()
+    carry := 0
+    for i := PREC - 1; i >= 0; i-- {
+        val  := a[i] * n + carry
+        r[i]  = val % 10
+        carry = int(val / 10)
+    }
+    return r
+}
+
+// arctan(1/x) = 1/x − 1/(3x³) + 1/(5x⁵) − ···
+func arctan_recip(x int) []int {
+    acc    := make_zero()
+    one    := make_zero()
+    one[0]  = 1
+    term   := div_by(one, x)
+    add_into(acc, term)
+    x2 := x * x
+    for k := 1; k < PREC * 4; k++ {
+        term = div_by(term, x2)
+        t   := div_by(term, 2 * k + 1)
+        if is_zero(t) { break }
+        if k % 2 == 1 { sub_into(acc, t) } else { add_into(acc, t) }
+    }
+    return acc
+}
+
+// π = 16·arctan(1/5) − 4·arctan(1/239)
+pi := mul_by(arctan_recip(5), 16)
+sub_into(pi, mul_by(arctan_recip(239), 4))
+
+// digit[0] is the integer part (3); digit[1..N] are the decimal places
+out := std.conv.to_string(pi[0]) + "."
+for i := 1; i <= N; i++ { out = out + std.conv.to_string(pi[i]) }
+
+std.io.printf("π to %d places:\n\n  %s\n", N, out)
