@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Update the committed gengo-engine.wasm and refresh cache-busting hashes.
+# Update the committed gengo-engine.wasm and regenerate the runtime asset manifest.
 # Run from the root of this repo after a gengo release build.
 #
 # Usage:
@@ -19,11 +19,12 @@ cp "$WASM_SRC" gengo-engine.wasm
 WASM_V=$(sha256sum gengo-engine.wasm | cut -c1-8)
 WORKER_V=$(sha256sum worker.js | cut -c1-8)
 
-# Update WASM cache-bust hash in index.html and playground.js
-perl -i -pe "s/gengo-engine\.wasm\?v=[0-9a-f]{8}/gengo-engine.wasm?v=$WASM_V/g" index.html playground.js
-
-# Update worker.js cache-bust hash in playground.js
-perl -i -pe "s/worker\.js\?v=[0-9a-f]{8}/worker.js?v=$WORKER_V/g" playground.js
+cat > asset-manifest.json <<EOF
+{
+  "worker": "./worker.js?v=$WORKER_V",
+  "wasm": "./gengo-engine.wasm?v=$WASM_V"
+}
+EOF
 
 echo "updated gengo-engine.wasm  (wasm: $WASM_V, worker: $WORKER_V)"
 echo "commit and push to deploy"

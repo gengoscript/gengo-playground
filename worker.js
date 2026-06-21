@@ -15,17 +15,30 @@ function formatEngineError(msg, source, line, col) {
   return out;
 }
 
-// 1. Immediately start compiling the WASM module streaming when worker starts
-const wasmPromise = (async () => {
-  const res = await fetch("./gengo-engine.wasm", { cache: "no-store" });
-  if (!res.ok) throw new Error(`Failed to fetch wasm: ${res.status}`);
-  return await WebAssembly.compileStreaming(res);
-})();
+let compiledModulePromise = null;
+let compiledModuleUrl = "";
 
-// 2. Perform a lightweight initial instantiation to get version info on load
-(async () => {
+async function ensureCompiledModule(wasmUrl) {
+  if (!wasmUrl) {
+    throw new Error("Missing wasmUrl for worker initialization");
+  }
+  if (compiledModulePromise && compiledModuleUrl === wasmUrl) {
+    return compiledModulePromise;
+  }
+
+  compiledModuleUrl = wasmUrl;
+  compiledModulePromise = (async () => {
+    const res = await fetch(wasmUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to fetch wasm: ${res.status}`);
+    return await WebAssembly.compileStreaming(res);
+  })();
+
+  return compiledModulePromise;
+}
+
+async function preloadWasm(wasmUrl) {
   try {
-    const module = await wasmPromise;
+    const module = await ensureCompiledModule(wasmUrl);
     const tempWasm = await WebAssembly.instantiate(module, {
       wasi_snapshot_preview1: new Proxy({}, { get: () => () => 0 }),
       env: {
@@ -45,28 +58,36 @@ const wasmPromise = (async () => {
     self.postMessage({ kind: "version", version });
     self.postMessage({ kind: "ready" });
   } catch (err) {
-    self.postMessage({ kind: "error", error: "Failed to preload engine version: " + String(err) });
+    self.postMessage({ kind: "init-error", error: "Failed to preload engine version: " + String(err) });
   }
-})();
+}
 
-// 3. Receive Gengo code run requests
 self.onmessage = async (evt) => {
+  const kind = evt.data?.kind ?? "run";
   const script = evt.data?.script ?? "";
-  const post = (kind, payload) => self.postMessage({ kind, ...payload });
+  const wasmUrl = evt.data?.wasmUrl;
+  const post = (nextKind, payload) => self.postMessage({ kind: nextKind, ...payload });
+
+  if (kind === "init") {
+    await preloadWasm(wasmUrl);
+    return;
+  }
 
   let finished = false;
-  const finish = (kind, payload) => {
+  const finish = (nextKind, payload) => {
     if (finished) return;
     finished = true;
-    post(kind, payload);
+    post(nextKind, payload);
   };
 
   try {
+    const module = await ensureCompiledModule(wasmUrl);
     const encoder = new TextEncoder();
     const encoded = encoder.encode(script);
 
-    // Minimal WASI stubs — engine only calls random/clock/env/io at runtime
-    // when the script actually uses those features.
+    let memory = null;
+    let outputBuf = "";
+
     const wasiImpl = {
       fd_write: (fd, iovs, iovcnt, nwritten) => {
         const view = new DataView(memory.buffer);
@@ -112,7 +133,7 @@ self.onmessage = async (evt) => {
         new DataView(memory.buffer).setBigUint64(resolution_ptr, 1000n, true);
         return 0;
       },
-      proc_exit: (code) => finish("done", {}),
+      proc_exit: () => finish("done", {}),
       poll_oneoff: (in_ptr, out_ptr, nsubscriptions, nevents) => {
         new DataView(memory.buffer).setUint32(nevents, 0, true);
         return 0;
@@ -126,17 +147,12 @@ self.onmessage = async (evt) => {
       args_get: () => 0,
     };
 
-    // Proxy catches any WASI import not explicitly stubbed above.
     const wasi = new Proxy(wasiImpl, {
       get(target, prop) {
         return prop in target ? target[prop] : () => 0;
       }
     });
 
-    let memory = null;
-    let outputBuf = "";
-
-    // env callbacks — I/O bridge between engine and playground
     const env = {
       gengo_write(ptr, len, is_stderr) {
         const str = new TextDecoder().decode(
@@ -149,14 +165,9 @@ self.onmessage = async (evt) => {
           post("stdout", { text: str });
         }
       },
-      // Playground has no stdin; signal EOF on every read.
       gengo_read: () => -1,
     };
 
-    // Access pre-compiled module (immediately ready if preloaded)
-    const module = await wasmPromise;
-
-    // Instantiate freshly compiled module (<1ms execution overhead)
     const wasm = await WebAssembly.instantiate(module, {
       wasi_snapshot_preview1: wasi,
       env,
@@ -170,8 +181,6 @@ self.onmessage = async (evt) => {
     const handle = wasm.exports.engine_init();
     if (handle === 0) throw new Error("engine_init failed");
 
-    // Write script into WASM linear memory past the data section.
-    // The engine has a 4 MB data/stack region; 8 MB is safely past it.
     const scratchOffset = 8 * 1024 * 1024;
     const needed = scratchOffset + encoded.length;
     if (memory.buffer.byteLength < needed) {
@@ -186,11 +195,11 @@ self.onmessage = async (evt) => {
       const errLen = wasm.exports.engine_last_error(handle, scratchOffset, 512);
       const errMsg = errLen > 0 ? new TextDecoder().decode(errBuf.slice(0, errLen)) : `error code ${result}`;
       const line = wasm.exports.engine_last_error_line(handle);
-      const col  = wasm.exports.engine_last_error_col(handle);
-      finish("error", { 
+      const col = wasm.exports.engine_last_error_col(handle);
+      finish("error", {
         error: formatEngineError(errMsg, script, line, col),
-        line: line,
-        col: col,
+        line,
+        col,
         message: errMsg
       });
       return;

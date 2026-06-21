@@ -68,10 +68,27 @@ function clearShareUrl() {
   }
 }
 
+async function loadAssetManifest() {
+  const response = await fetch("./asset-manifest.json", { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Failed to load asset manifest: ${response.status}`);
+  }
+
+  const manifest = await response.json();
+  if (!manifest || typeof manifest.worker !== "string" || typeof manifest.wasm !== "string") {
+    throw new Error("Asset manifest is missing worker/wasm entries");
+  }
+
+  return manifest;
+}
+
+const assetManifestPromise = loadAssetManifest();
+
 const MaxOutputBytes = 128 * 1024;
 const RunTimeoutMs = 10000;
 
 let worker = null;
+let workerLoadPromise = null;
 let runTimer = null;
 let outputBytes = 0;
 let editor = null;
@@ -79,6 +96,7 @@ let startTime = 0;
 let autoRunTimeout = null;
 let isRunning = false;
 let hasStderr = false;
+let assetManifest = null;
 
 runBtn.disabled = true;
 shareBtn.disabled = true;
@@ -413,7 +431,8 @@ require(['vs/editor/editor.main'], function () {
   document.documentElement.setAttribute("data-theme", currentTheme);
   updateThemeIcon(currentTheme);
 
-  initialPromise.then(function (initialCode) {
+  Promise.all([initialPromise, assetManifestPromise]).then(function ([initialCode, manifest]) {
+    assetManifest = manifest;
     editor = monaco.editor.create(document.getElementById('editor'), {
       value: initialCode,
       language: 'gengo',
@@ -473,7 +492,8 @@ require(['vs/editor/editor.main'], function () {
 
     runBtn.disabled = false;
     shareBtn.disabled = false;
-  });
+    preloadWorker().catch(handleWorkerBootstrapError);
+  }).catch(handleWorkerBootstrapError);
 });
 
 // Settings changes listeners
@@ -605,8 +625,23 @@ function stopRun(reason) {
     worker.terminate();
     worker = null;
   }
+  workerLoadPromise = null;
   setIdle(reason || "Stopped", true);
-  preloadWorker();
+  preloadWorker().catch(handleWorkerBootstrapError);
+}
+
+function handleWorkerBootstrapError(err) {
+  const message = String((err && (err.stack || err.message)) || err);
+  if (versionEl) versionEl.textContent = "Gengoscript unavailable";
+  if (worker) {
+    worker.terminate();
+    worker = null;
+  }
+  workerLoadPromise = null;
+  if (isRunning) {
+    appendOutput(message + "\n", true);
+    setIdle("Error", true);
+  }
 }
 
 function setupWorkerListeners(w) {
@@ -617,6 +652,10 @@ function setupWorkerListeners(w) {
     if (msg.kind === "done") { setIdle(hasStderr ? "Error" : "Success", hasStderr); return; }
     if (msg.kind === "version") { if (versionEl) versionEl.textContent = "Gengoscript v" + msg.version + " (WASM)"; return; }
     if (msg.kind === "ready") { return; }
+    if (msg.kind === "init-error") {
+      handleWorkerBootstrapError(msg.error || "Failed to initialize worker");
+      return;
+    }
     if (msg.kind === "error") {
       appendOutput((msg.error || "unknown error") + "\n", true);
       setIdle("Error", true);
@@ -634,17 +673,33 @@ function setupWorkerListeners(w) {
       worker.terminate();
       worker = null;
     }
-    preloadWorker();
+    workerLoadPromise = null;
+    preloadWorker().catch(handleWorkerBootstrapError);
   };
 }
 
-function preloadWorker() {
-  if (worker) return;
-  worker = new Worker("./worker.js?v=1e0c4464", { type: "module" });
-  setupWorkerListeners(worker);
+async function preloadWorker() {
+  if (worker) return worker;
+  if (workerLoadPromise) return workerLoadPromise;
+
+  workerLoadPromise = (async () => {
+    const manifest = assetManifest || await assetManifestPromise;
+    const nextWorker = new Worker(manifest.worker, { type: "module" });
+    setupWorkerListeners(nextWorker);
+    nextWorker.postMessage({ kind: "init", wasmUrl: manifest.wasm });
+    worker = nextWorker;
+    return nextWorker;
+  })();
+
+  try {
+    return await workerLoadPromise;
+  } catch (err) {
+    workerLoadPromise = null;
+    throw err;
+  }
 }
 
-runBtn.onclick = function () {
+runBtn.onclick = async function () {
   if (isRunning || !editor) return;
   isRunning = true;
   runBtn.disabled = true;
@@ -658,8 +713,11 @@ runBtn.onclick = function () {
   startTime = performance.now();
   execInfoEl.textContent = "";
 
-  if (!worker) {
-    preloadWorker();
+  try {
+    await preloadWorker();
+  } catch (err) {
+    handleWorkerBootstrapError(err);
+    return;
   }
 
   runTimer = setTimeout(function () {
@@ -667,16 +725,13 @@ runBtn.onclick = function () {
     stopRun("Timeout");
   }, RunTimeoutMs);
 
-  worker.postMessage({ script: editor.getValue() });
+  worker.postMessage({ kind: "run", script: editor.getValue(), wasmUrl: assetManifest.wasm });
 };
 
 stopBtn.onclick = function () {
   appendOutput("\n[terminated: stopped]\n", true);
   stopRun("Stopped");
 };
-
-// Start preloading the worker immediately on load
-preloadWorker();
 
 function updateUrl(code) {
   const url = new URL(window.location);
