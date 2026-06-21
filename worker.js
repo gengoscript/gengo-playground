@@ -15,6 +15,41 @@ function formatEngineError(msg, source, line, col) {
   return out;
 }
 
+// 1. Immediately start compiling the WASM module streaming when worker starts
+const wasmPromise = (async () => {
+  const res = await fetch("./gengo-engine.wasm", { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to fetch wasm: ${res.status}`);
+  return await WebAssembly.compileStreaming(res);
+})();
+
+// 2. Perform a lightweight initial instantiation to get version info on load
+(async () => {
+  try {
+    const module = await wasmPromise;
+    const tempWasm = await WebAssembly.instantiate(module, {
+      wasi_snapshot_preview1: new Proxy({}, { get: () => () => 0 }),
+      env: {
+        gengo_write: () => {},
+        gengo_read: () => -1
+      },
+      gengo_host: {
+        gengo_native_call: () => 1
+      }
+    });
+
+    const verPtr = tempWasm.exports.gengo_engine_version();
+    const verBytes = new Uint8Array(tempWasm.exports.memory.buffer, verPtr);
+    const verEnd = verBytes.indexOf(0);
+    const version = new TextDecoder().decode(verBytes.slice(0, verEnd));
+
+    self.postMessage({ kind: "version", version });
+    self.postMessage({ kind: "ready" });
+  } catch (err) {
+    self.postMessage({ kind: "error", error: "Failed to preload engine version: " + String(err) });
+  }
+})();
+
+// 3. Receive Gengo code run requests
 self.onmessage = async (evt) => {
   const script = evt.data?.script ?? "";
   const post = (kind, payload) => self.postMessage({ kind, ...payload });
@@ -118,27 +153,21 @@ self.onmessage = async (evt) => {
       gengo_read: () => -1,
     };
 
-    const res = await fetch("./gengo-engine.wasm", { cache: "no-store" });
-    if (!res.ok) throw new Error(`Failed to fetch wasm: ${res.status}`);
+    // Access pre-compiled module (immediately ready if preloaded)
+    const module = await wasmPromise;
 
-    const wasm = await WebAssembly.instantiateStreaming(res, {
+    // Instantiate freshly compiled module (<1ms execution overhead)
+    const wasm = await WebAssembly.instantiate(module, {
       wasi_snapshot_preview1: wasi,
       env,
       gengo_host: {
-        // Playground has no host modules; return unsupported (1) for all calls.
         gengo_native_call: () => 1,
       },
     });
 
-    memory = wasm.instance.exports.memory;
+    memory = wasm.exports.memory;
 
-    const verPtr = wasm.instance.exports.gengo_engine_version();
-    const verBytes = new Uint8Array(memory.buffer, verPtr);
-    const verEnd = verBytes.indexOf(0);
-    const version = new TextDecoder().decode(verBytes.slice(0, verEnd));
-    post("version", { version });
-
-    const handle = wasm.instance.exports.engine_init();
+    const handle = wasm.exports.engine_init();
     if (handle === 0) throw new Error("engine_init failed");
 
     // Write script into WASM linear memory past the data section.
@@ -151,14 +180,19 @@ self.onmessage = async (evt) => {
     }
     new Uint8Array(memory.buffer, scratchOffset, encoded.length).set(encoded);
 
-    const result = wasm.instance.exports.engine_run(handle, scratchOffset, encoded.length);
+    const result = wasm.exports.engine_run(handle, scratchOffset, encoded.length);
     if (result !== 0) {
       const errBuf = new Uint8Array(memory.buffer, scratchOffset, 512);
-      const errLen = wasm.instance.exports.engine_last_error(handle, scratchOffset, 512);
+      const errLen = wasm.exports.engine_last_error(handle, scratchOffset, 512);
       const errMsg = errLen > 0 ? new TextDecoder().decode(errBuf.slice(0, errLen)) : `error code ${result}`;
-      const line = wasm.instance.exports.engine_last_error_line(handle);
-      const col  = wasm.instance.exports.engine_last_error_col(handle);
-      finish("error", { error: formatEngineError(errMsg, script, line, col) });
+      const line = wasm.exports.engine_last_error_line(handle);
+      const col  = wasm.exports.engine_last_error_col(handle);
+      finish("error", { 
+        error: formatEngineError(errMsg, script, line, col),
+        line: line,
+        col: col,
+        message: errMsg
+      });
       return;
     }
 

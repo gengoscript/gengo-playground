@@ -3,33 +3,100 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gengo Playground</title>
+  <title>Gengoscript Playground</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
+    /* Gengoscript Brand Colors & Style Guidelines */
     :root {
-      --bg: #0d1117;
-      --panel: #161b22;
-      --border: #30363d;
-      --ink: #c9d1d9;
-      --ink-muted: #8b949e;
-      --accent: #238636;
-      --accent-hover: #2ea043;
-      --err: #f85149;
-      --header-height: 56px;
+      /* Gengoscript Light Theme (Default) */
+      --bg: #fbfaf6;
+      --fg: #161616;
+      --accent: #6b6f7a;
+      --code-bg: #f4f1eb;
+      --border: #1f2d3d;
+      
+      --syntax-keyword: #9a2f5d;
+      --syntax-type: #245f88;
+      --syntax-string: #1f6a4f;
+      --syntax-comment: #7a7f8a;
+      
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      
+      --panel: #ffffff;
+      --panel-border: #e4dfd5;
+      --accent-glow: rgba(107, 111, 122, 0.15);
+      --err: #b91c1c;
+      --err-glow: rgba(185, 28, 28, 0.1);
+      --header-height: 60px;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+      --glass-bg: rgba(251, 250, 246, 0.85);
+      --glass-blur: blur(12px);
+
+      --bg-glow-1: rgba(127, 179, 213, 0.12);
+      --bg-glow-2: rgba(154, 47, 93, 0.07);
+    }
+
+    [data-theme="dark"] {
+      /* Gengoscript Dark Theme */
+      --bg: #101316;
+      --fg: #edf1f5;
+      --accent: #9aa6b2;
+      --code-bg: #151b22;
+      --border: #7fb3d5;
+      
+      --syntax-keyword: #ff7aa2;
+      --syntax-type: #7cc7ff;
+      --syntax-string: #7ee0a7;
+      --syntax-comment: #7f8a96;
+      
+      --panel: #151b22;
+      --panel-border: #222a36;
+      --accent-glow: rgba(127, 179, 213, 0.1);
+      --err: #f43f5e;
+      --err-glow: rgba(244, 63, 94, 0.15);
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      --glass-bg: rgba(16, 19, 22, 0.85);
+
+      --bg-glow-1: rgba(127, 179, 213, 0.1);
+      --bg-glow-2: rgba(255, 122, 162, 0.06);
     }
 
     * { box-sizing: border-box; }
+    
     body {
       margin: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--ink);
+      font-family: var(--font-sans);
+      background:
+        radial-gradient(circle at 5% 5%, var(--bg-glow-1), transparent 32rem),
+        radial-gradient(circle at 95% 5%, var(--bg-glow-2), transparent 28rem),
+        var(--bg);
+      color: var(--fg);
       height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: background var(--transition), color var(--transition);
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Scrollbars matching the minimalist aesthetic */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--panel-border);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
     }
 
     header {
@@ -37,188 +104,957 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg);
+      padding: 0 24px;
+      border-bottom: 1px solid var(--panel-border);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
       z-index: 10;
+      transition: border var(--transition), background var(--transition);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--fg);
+      gap: 12px;
+      transition: var(--transition);
     }
 
     .logo {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-weight: 600;
-      font-size: 18px;
-      letter-spacing: -0.02em;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
 
-    .logo svg { width: 24px; height: 24px; fill: var(--accent); }
+    .logo svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: var(--fg);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
 
-    .actions { display: flex; gap: 12px; align-items: center; }
+    .logo-sub {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+    }
+
+    .logo-separator {
+      color: var(--panel-border);
+      font-size: 1.1rem;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dropdown-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    select {
+      appearance: none;
+      background: var(--code-bg);
+      color: var(--fg);
+      border: 1px solid var(--panel-border);
+      padding: 6px 30px 6px 12px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    select:hover, select:focus {
+      border-color: var(--fg);
+    }
+
+    .dropdown-container::after {
+      content: '';
+      position: absolute;
+      right: 12px;
+      width: 5px;
+      height: 5px;
+      border-right: 1.5px solid var(--accent);
+      border-bottom: 1.5px solid var(--accent);
+      transform: rotate(45deg);
+      pointer-events: none;
+    }
 
     button {
       appearance: none;
-      background: var(--accent);
-      color: #fff;
-      border: 1px solid rgba(240,246,252,0.1);
-      padding: 6px 16px;
+      background: var(--fg);
+      color: var(--bg);
+      border: 1px solid var(--fg);
+      padding: 6px 14px;
       border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-      display: flex;
+      transition: var(--transition);
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 8px;
     }
-    button:hover:not(:disabled) { background: var(--accent-hover); }
-    button:active:not(:disabled) { transform: translateY(1px); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    button.secondary { background: #30363d; }
-    button.secondary:hover:not(:disabled) { background: #3fb95033; border-color: #3fb950; color: #3fb950; }
+    button:hover:not(:disabled) {
+      background: transparent;
+      color: var(--fg);
+    }
+    button:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--panel-border);
+    }
+    button.secondary:hover:not(:disabled) {
+      border-color: var(--fg);
+      background: rgba(127,127,127,0.03);
+    }
+
+    button.icon-only {
+      padding: 6px;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+    }
 
     main {
       flex: 1;
       display: flex;
-      flex-direction: row;
       overflow: hidden;
+      position: relative;
     }
 
-    @media (max-width: 800px) {
-      main { flex-direction: column; }
+    /* Split Panes Configuration */
+    main.split-vertical {
+      flex-direction: row;
+    }
+    main.split-horizontal {
+      flex-direction: column;
     }
 
     .editor-container, .output-container {
-      flex: 1;
       position: relative;
       display: flex;
       flex-direction: column;
-      min-width: 0;
-      min-height: 0;
-    }
-
-    .output-container {
-      border-left: 1px solid var(--border);
+      min-width: 160px;
+      min-height: 100px;
+      overflow: hidden;
       background: var(--panel);
-    }
-    @media (max-width: 800px) {
-      .output-container { border-left: 0; border-top: 1px solid var(--border); }
+      transition: background var(--transition);
     }
 
-    .pane-title {
-      padding: 8px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--ink-muted);
+    main.split-vertical .editor-container, 
+    main.split-vertical .output-container {
+      height: 100%;
+    }
+
+    main.split-horizontal .editor-container, 
+    main.split-horizontal .output-container {
+      width: 100%;
+    }
+
+    .pane-header {
+      padding: 0 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border);
-      background: rgba(0,0,0,0.1);
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--panel-border);
+      background: rgba(127, 127, 127, 0.02);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      height: 38px;
+      user-select: none;
     }
 
-    #editor { flex: 1; width: 100%; height: 100%; }
+    .pane-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pane-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pane-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      box-shadow: none;
+    }
+    .pane-action-btn:hover:not(:disabled) {
+      color: var(--fg);
+      background: rgba(127, 127, 127, 0.08);
+    }
+    .pane-action-btn svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    #editor {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+    }
+
+    /* Output Console styling */
+    .out-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
 
     #out {
       flex: 1;
       margin: 0;
       padding: 16px;
       overflow-y: auto;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 13px;
       line-height: 1.6;
       white-space: pre-wrap;
       word-break: break-all;
+      background: var(--bg);
+      color: var(--fg);
+      transition: font-size var(--transition), background var(--transition), color var(--transition);
+    }
+
+    #out.word-wrap-off {
+      white-space: pre;
+      word-break: normal;
+      overflow-x: auto;
     }
 
     .status-bar {
-      height: 32px;
+      height: 28px;
       padding: 0 16px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--panel-border);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      font-family: var(--font-mono);
       font-size: 11px;
-      color: var(--ink-muted);
-      background: var(--bg);
+      font-weight: 500;
+      color: var(--accent);
+      background: rgba(127, 127, 127, 0.02);
+      user-select: none;
     }
 
     .badge {
-      padding: 2px 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
       border-radius: 4px;
       font-weight: 600;
-      background: var(--border);
-      color: var(--ink);
+      font-size: 10px;
+      background: var(--code-bg);
+      color: var(--fg);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border: 1px solid var(--panel-border);
     }
-    .badge.success { color: var(--accent); background: #3fb9501a; }
-    .badge.error { color: var(--err); background: #f851491a; }
+    .badge.success {
+      color: var(--syntax-string);
+      background: rgba(31, 106, 79, 0.05);
+      border: 1px solid rgba(31, 106, 79, 0.2);
+    }
+    .badge.error {
+      color: var(--err);
+      background: var(--err-glow);
+      border: 1px solid rgba(185, 28, 28, 0.25);
+    }
+    .badge.running {
+      color: var(--syntax-type);
+      background: rgba(36, 95, 136, 0.05);
+      border: 1px solid rgba(36, 95, 136, 0.2);
+      animation: pulse-badge 1.5s infinite;
+    }
 
-    /* Monaco overrides */
+    @keyframes pulse-badge {
+      0% { opacity: 0.7; }
+      50% { opacity: 1; }
+      100% { opacity: 0.7; }
+    }
+
+    /* Draggable Splitter Divider */
+    .divider {
+      background: var(--panel-border);
+      position: relative;
+      z-index: 5;
+      transition: background var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .divider:hover {
+      background: var(--fg);
+    }
+
+    main.split-vertical .divider {
+      width: 4px;
+      cursor: col-resize;
+      height: 100%;
+    }
+    main.split-horizontal .divider {
+      height: 4px;
+      cursor: row-resize;
+      width: 100%;
+    }
+
+    .divider-handle {
+      position: absolute;
+      background: var(--accent);
+      border-radius: 2px;
+      opacity: 0;
+      transition: opacity var(--transition), background var(--transition);
+    }
+    .divider:hover .divider-handle {
+      opacity: 1;
+      background: var(--fg);
+    }
+
+    main.split-vertical .divider-handle {
+      width: 2px;
+      height: 20px;
+    }
+    main.split-horizontal .divider-handle {
+      width: 20px;
+      height: 2px;
+    }
+
+    /* Monaco Editor Custom Style Overrides */
     .monaco-editor, .monaco-editor .margin, .monaco-editor-background {
-      background-color: var(--bg) !important;
+      background-color: var(--panel) !important;
+      transition: background-color var(--transition);
+    }
+    .monaco-editor .scroll-decoration {
+      box-shadow: none !important;
+    }
+
+    /* Settings Slide-out Panel Drawer */
+    .panel-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .panel-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 0;
+      right: -320px;
+      width: 320px;
+      height: 100vh;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border-left: 1px solid var(--panel-border);
+      box-shadow: var(--shadow);
+      z-index: 101;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .settings-panel.open {
+      right: 0;
+    }
+
+    .panel-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-header h2 {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--fg);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .panel-content {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .setting-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .setting-item label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .setting-description {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: -4px;
+      line-height: 1.4;
+    }
+    .setting-input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Sliders and Toggles */
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--fg);
+      cursor: pointer;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--panel-border);
+      transition: .2s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--bg);
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--fg);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+      background-color: var(--bg);
+    }
+
+    /* Modal Styling */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s ease;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-container {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 440px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.96);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .modal-backdrop.open .modal-container {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--fg);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .modal-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .shortcut-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .shortcut-label {
+      color: var(--fg);
+    }
+    .shortcut-keys {
+      display: flex;
+      gap: 4px;
+    }
+    kbd {
+      background: var(--code-bg);
+      color: var(--fg);
+      border: 1px solid var(--panel-border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    /* Clipboard toast feedback */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--fg);
+      color: var(--bg);
+      padding: 8px 18px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      z-index: 2000;
+      opacity: 0;
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.15), opacity 0.2s;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--panel-border);
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
     }
   </style>
 </head>
 <body>
+  <!-- Top Navigation Header -->
   <header>
-    <div class="logo">
-      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-      Gengo
-    </div>
-    <div class="actions">
-      <select id="examples" style="background: var(--panel); color: var(--ink); border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-size: 13px; outline: none; cursor: pointer;">
-        <option value="" disabled hidden>Examples</option>
-        <option value="hello">Hello World</option>
-        <option value="variables">Variables &amp; Types</option>
-        <option value="control_flow">Control Flow</option>
-        <option value="functions">Functions</option>
-        <option value="closures">Closures</option>
-        <option value="structs">Structs &amp; Methods</option>
-        <option value="interfaces">Interfaces</option>
-        <option value="enums">Enums</option>
-        <option value="variants">Variants</option>
-        <option value="named_types">Named Types</option>
-        <option value="arrays">Arrays</option>
-        <option value="maps">Maps</option>
-        <option value="strings">Strings</option>
-        <option value="multiline">Multiline Strings</option>
-        <option value="errors">Error Handling</option>
-        <option value="defer_recover">Defer &amp; Recover</option>
-        <option value="simlab">Simulation</option>
-        <option value="maze">Maze</option>
-      </select>
-      <button id="share" class="secondary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-        Share
+    <a href="https://gengoscript.org/" class="logo-container" target="_blank" title="Go to Gengoscript Homepage">
+      <div class="logo">
+        <svg viewBox="0 0 24 24">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+        Gengoscript
+      </div>
+      <span class="logo-separator">/</span>
+      <span class="logo-sub">playground</span>
+    </a>
+    
+    <div class="controls-group">
+      <!-- Example Selection -->
+      <div class="dropdown-container">
+        <select id="examples" title="Load a Gengoscript example program">
+          <option value="" disabled hidden>Examples</option>
+          <option value="hello">Hello World</option>
+          <option value="variables">Variables &amp; Types</option>
+          <option value="control_flow">Control Flow</option>
+          <option value="functions">Functions</option>
+          <option value="closures">Closures</option>
+          <option value="structs">Structs &amp; Methods</option>
+          <option value="interfaces">Interfaces</option>
+          <option value="enums">Enums</option>
+          <option value="variants">Variants</option>
+          <option value="named_types">Named Types</option>
+          <option value="arrays">Arrays</option>
+          <option value="maps">Maps</option>
+          <option value="strings">Strings</option>
+          <option value="multiline">Multiline Strings</option>
+          <option value="errors">Error Handling</option>
+          <option value="defer_recover">Defer &amp; Recover</option>
+          <option value="simlab">Simulation</option>
+          <option value="maze">Maze</option>
+        </select>
+      </div>
+
+      <!-- Reset Example -->
+      <button id="reset-btn" class="secondary icon-only" title="Reset current script to original template">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+        </svg>
       </button>
-      <button id="run">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+    </div>
+
+    <!-- Right Side Actions -->
+    <div class="controls-group">
+      <!-- Keyboard Shortcuts -->
+      <button id="shortcuts-btn" class="secondary icon-only" title="Keyboard shortcuts">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+          <line x1="6" y1="8" x2="6" y2="8.01"></line>
+          <line x1="10" y1="8" x2="10" y2="8.01"></line>
+          <line x1="14" y1="8" x2="14" y2="8.01"></line>
+          <line x1="18" y1="8" x2="18" y2="8.01"></line>
+          <line x1="6" y1="12" x2="6" y2="12.01"></line>
+          <line x1="18" y1="12" x2="18" y2="12.01"></line>
+          <line x1="7" y1="16" x2="17" y2="16"></line>
+          <line x1="10" y1="12" x2="14" y2="12"></line>
+        </svg>
+      </button>
+
+      <!-- Layout Switcher Toggle -->
+      <button id="orientation-btn" class="secondary icon-only" title="Toggle layout split orientation">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line id="orient-line" x1="12" y1="3" x2="12" y2="21"></line>
+        </svg>
+      </button>
+
+      <!-- Dynamic Theme Switcher Toggle -->
+      <button id="theme-toggle-btn" class="secondary icon-only" title="Toggle light/dark theme">
+        <svg id="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></svg>
+      </button>
+
+      <!-- Settings Menu Panel Gear -->
+      <button id="settings-btn" class="secondary icon-only" title="Editor preferences">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+
+      <!-- Code URL Share -->
+      <button id="share" class="secondary" title="Copy shareable playground URL">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+        <span>Share</span>
+      </button>
+
+      <!-- Execution Controls -->
+      <button id="run" title="Compile &amp; execute script (Ctrl+Enter)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
         Run
       </button>
-      <button id="stop" class="secondary" disabled>Stop</button>
+      <button id="stop" class="secondary" disabled title="Stop program execution">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+        </svg>
+        Stop
+      </button>
     </div>
   </header>
-  <main>
-    <div class="editor-container">
-      <div class="pane-title">script.gengo</div>
-      <div id="editor"></div>
-    </div>
-    <div class="output-container">
-      <div class="pane-title">
-        Output
-        <span id="exec-info" style="font-weight: normal; text-transform: none;"></span>
+
+  <!-- Split Panel Workspace -->
+  <main id="workspace" class="split-vertical">
+    <!-- Editor Pane -->
+    <div class="editor-container" id="editor-pane" style="flex: 50%;">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <span>script.gengo</span>
+        </div>
+        <div class="pane-actions">
+          <button id="download-btn" class="pane-action-btn" title="Download code file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+        </div>
       </div>
-      <pre id="out"></pre>
+      <div id="editor"></div>
       <div class="status-bar">
-        <div id="status">Idle</div>
-        <div id="version">Gengo v0.1 (WASM)</div>
+        <div id="cursor-pos">Ln 1, Col 1</div>
+        <div style="text-transform: uppercase;">gengo</div>
+      </div>
+    </div>
+
+    <!-- Draggable Splitter Gutter -->
+    <div class="divider" id="divider">
+      <div class="divider-handle"></div>
+    </div>
+
+    <!-- Output Console Pane -->
+    <div class="output-container" id="output-pane" style="flex: 50%;">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <span>Console Output</span>
+          <span id="exec-info" style="font-weight: 600; text-transform: none; color: var(--accent); margin-left: 8px;"></span>
+        </div>
+        <div class="pane-actions">
+          <button id="wrap-out-btn" class="pane-action-btn" title="Toggle text wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 17 6 21 10 17 14 3 14"></polyline>
+              <path d="M17 14H3"></path>
+              <line x1="3" y1="18" x2="15" y2="18"></line>
+            </svg>
+          </button>
+          <button id="copy-out-btn" class="pane-action-btn" title="Copy console text">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+          <button id="clear-btn" class="pane-action-btn" title="Clear output">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="out-wrapper">
+        <pre id="out"></pre>
+      </div>
+      <div class="status-bar">
+        <div id="status">
+          <span class="badge">Idle</span>
+        </div>
+        <div id="version">Gengoscript v0.1 (WASM)</div>
       </div>
     </div>
   </main>
 
+  <!-- Preferences Settings Overlay Drawer -->
+  <div id="panel-overlay" class="panel-overlay"></div>
+  <div id="settings-panel" class="settings-panel">
+    <div class="panel-header">
+      <h2>Editor Preferences</h2>
+      <button id="close-settings" class="pane-action-btn" title="Close preference panel" style="padding: 6px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="panel-content">
+      <!-- Theme Selection -->
+      <div class="setting-item">
+        <label for="setting-theme">Color Theme</label>
+        <select id="setting-theme">
+          <option value="light">Gengoscript Light</option>
+          <option value="dark">Gengoscript Dark</option>
+        </select>
+        <span class="setting-description">Alters editor token styles and page skin to fit Gengoscript brand guidelines.</span>
+      </div>
+
+      <!-- Font Size Slider -->
+      <div class="setting-item">
+        <label for="setting-font-size">Font Size</label>
+        <div class="setting-input-row">
+          <input type="range" id="setting-font-size" min="11" max="22" step="1" value="14" />
+          <span id="font-size-val" style="font-family: var(--font-mono); font-size: 12px; min-width: 32px; text-align: right; font-weight: bold;">14px</span>
+        </div>
+      </div>
+
+      <!-- Tab Size -->
+      <div class="setting-item">
+        <label for="setting-tab-size">Tab Insertion Width</label>
+        <select id="setting-tab-size">
+          <option value="2">2 spaces</option>
+          <option value="4" selected>4 spaces</option>
+          <option value="8">8 spaces</option>
+        </select>
+      </div>
+
+      <!-- Minimap Toggle -->
+      <div class="setting-item">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <label for="setting-minimap">Editor Code Minimap</label>
+            <div class="setting-description">Show editor content map on right side.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-minimap" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Line Wrapping -->
+      <div class="setting-item">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <label for="setting-wrap">Line Wrapping</label>
+            <div class="setting-description">Wrap long script lines to fit panels.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-wrap" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Auto-run Checkbox -->
+      <div class="setting-item">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <label for="setting-autorun">Auto-Run Code</label>
+            <div class="setting-description">Execute automatically 1.5s after editing stops.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-autorun" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcuts-modal" class="modal-backdrop">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>Keyboard Shortcuts</h3>
+        <button id="close-shortcuts" class="pane-action-btn" title="Close shortcuts dialog" style="padding: 6px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcut-row">
+          <span class="shortcut-label">Compile &amp; Run Script</span>
+          <div class="shortcut-keys">
+            <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+          </div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Copy Share URL</span>
+          <div class="shortcut-keys">
+            <kbd>Ctrl</kbd> + <kbd>S</kbd>
+          </div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Clear Console Output</span>
+          <div class="shortcut-keys">
+            <kbd>Ctrl</kbd> + <kbd>L</kbd>
+          </div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Reset Example Code</span>
+          <div class="shortcut-keys">
+            <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>R</kbd>
+          </div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Close Overlays / Dialogs</span>
+          <div class="shortcut-keys">
+            <kbd>Esc</kbd>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification element -->
+  <div id="toast" class="toast">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span id="toast-text">Playground URL copied to clipboard!</span>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
-  <script type="module" src="./playground.js?v=a22fd13c"></script>
+  <script type="module" src="./playground.js?v=e2452a60"></script>
 </body>
 </html>
