@@ -610,14 +610,24 @@ function appendOutput(text, isError) {
   outEl.scrollTop = outEl.scrollHeight;
 }
 
+function formatDuration(elapsedMs) {
+  if (elapsedMs >= 1000) {
+    return `${(elapsedMs / 1000).toFixed(2)}s`;
+  }
+  if (elapsedMs >= 1) {
+    return `${elapsedMs.toFixed(2)}ms`;
+  }
+  return `${(elapsedMs * 1000).toFixed(2)}us`;
+}
+
 function setIdle(status, isError) {
   isRunning = false;
   runBtn.disabled = false;
   stopBtn.disabled = true;
   if (runTimer) { clearTimeout(runTimer); runTimer = null; }
   statusEl.innerHTML = `<span class="badge ${isError ? 'error' : 'success'}">${status}</span>`;
-  const duration = ((performance.now() - startTime) / 1000).toFixed(2);
-  if (startTime > 0) execInfoEl.textContent = `Finished in ${duration}s`;
+  const elapsedMs = performance.now() - startTime;
+  if (startTime > 0) execInfoEl.textContent = `Finished in ${formatDuration(elapsedMs)}`;
 }
 
 function stopRun(reason) {
