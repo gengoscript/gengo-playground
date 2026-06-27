@@ -1,41 +1,28 @@
-// A variant (tagged union) holds exactly one of several possible forms at a time,
-// each optionally carrying different data. Switching on a variant must cover all
-// arms. Inspired by Zig's tagged unions and ML/Haskell algebraic data types.
-// https://en.wikipedia.org/wiki/Tagged_union
+// Variants make state and decisions explicit instead of encoding them in maps.
 
 std := import("std")
 
-type Circle struct { radius float }
-type Rect   struct { w float, h float }
-
-type Shape variant {
-    circle(c Circle),
-    rect(r Rect),
-    dot,
+// Only the declared cases are legal, and each case carries the right payload.
+type Decision variant {
+    allow(rule string),
+    deny(reason string),
+    review(owner string),
 }
 
-func describe(s Shape) {
-    switch s {
-        case .circle as c {
-            std.io.printf("circle  radius=%.1f  area=%.2f\n",
-                c.radius, 3.14159 * c.radius * c.radius)
-        }
-        case .rect as r {
-            std.io.printf("rect    %.1fx%.1f  area=%.2f\n",
-                r.w, r.h, r.w * r.h)
-        }
-        default {
-            std.io.println("dot     area=0")
-        }
+func describe(d Decision) string {
+    switch d {
+        case .allow as rule  { return "allow via " + rule }
+        case .deny as reason { return "deny: " + reason }
+        case .review as owner { return "review by " + owner }
     }
 }
 
-shapes := [
-    Shape.circle(Circle{radius: 3.0}),
-    Shape.rect(Rect{w: 4.0, h: 5.0}),
-    Shape.dot,
+decisions := [
+    Decision.allow("quota-ok"),
+    Decision.review("fraud-team"),
+    Decision.deny("country not enabled"),
 ]
 
-for s in shapes {
-    describe(s)
+for decision in decisions {
+    std.io.println(describe(decision))
 }

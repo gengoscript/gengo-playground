@@ -1,11 +1,5 @@
-// Compute π to N decimal places using Machin's formula with digit arrays.
-// π/4 = 4·arctan(1/5) - arctan(1/239)
-//
-// Each decimal digit lives in its own array slot, so all arithmetic is
-// exact integer long-division — no floating-point precision limit. Each
-// arctan is evaluated term by term; successive terms shrink by x² so
-// convergence is fast. Increase N freely; runtime is O(N²).
-// https://en.wikipedia.org/wiki/Machin-like_formula
+// Compute pi with exact digit-array arithmetic. This is intentionally heavier
+// than the other examples and shows that Gengo can support real algorithms too.
 
 std := import("std")
 
@@ -27,8 +21,8 @@ func add_into(a []int, b []int) {
     carry := 0
     for i := PREC - 1; i >= 0; i-- {
         s    := a[i] + b[i] + carry
-        a[i]  = s % 10
-        carry = int(s / 10)
+        a[i]  = s rem 10
+        carry = s div 10
     }
 }
 
@@ -51,8 +45,8 @@ func div_by(a []int, n int) []int {
     carry := 0
     for i := 0; i < PREC; i++ {
         val  := carry * 10 + a[i]
-        r[i]  = int(val / n)
-        carry = val % n
+        r[i]  = val div n
+        carry = val rem n
     }
     return r
 }
@@ -62,8 +56,8 @@ func mul_by(a []int, n int) []int {
     carry := 0
     for i := PREC - 1; i >= 0; i-- {
         val  := a[i] * n + carry
-        r[i]  = val % 10
-        carry = int(val / 10)
+        r[i]  = val rem 10
+        carry = val div 10
     }
     return r
 }
@@ -80,7 +74,7 @@ func arctan_recip(x int) []int {
         term = div_by(term, x2)
         t   := div_by(term, 2 * k + 1)
         if is_zero(t) { break }
-        if k % 2 == 1 { sub_into(acc, t) } else { add_into(acc, t) }
+        if k rem 2 == 1 { sub_into(acc, t) } else { add_into(acc, t) }
     }
     return acc
 }

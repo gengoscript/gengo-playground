@@ -1,37 +1,31 @@
-// Functions are first-class values and can return multiple results at once.
-// Multiple return values — and the (result, error) idiom built on them —
-// are borrowed from Go.
-// https://en.wikipedia.org/wiki/First-class_function
+// Small operational helpers with default parameters and multi-value returns.
 
 std := import("std")
 
-func factorial(n int) int {
-    if n <= 1 { return 1 }
-    return n * factorial(n - 1)
+// Request counts and latencies are both integers, but not the same domain.
+type RequestCount int range 0..100000
+type LatencyMs int range 0..60000
+
+func distribute(total RequestCount, shards int = 3) (RequestCount, RequestCount) {
+    // Unwrap for arithmetic, then wrap back into the domain type.
+    return RequestCount(int(total) div shards), RequestCount(int(total) rem shards)
 }
 
-// Multiple return values — caller unpacks with :=
-func divmod(a int, b int) (int, int) {
-    return int(a / b), a % b
-}
-
-func minMax(nums []int) (int, int) {
-    lo := nums[0]
-    hi := nums[0]
-    for n in nums {
-        if n < lo { lo = n }
-        if n > hi { hi = n }
+func summarize(latencies []LatencyMs) (LatencyMs, LatencyMs, int) {
+    low := latencies[0]
+    high := latencies[0]
+    total := 0
+    for value in latencies {
+        if value < low { low = value }
+        if value > high { high = value }
+        total += int(value)
     }
-    return lo, hi
+    return low, high, total
 }
 
-for i := 0; i <= 7; i++ {
-    std.io.printf("%d! = %d\n", i, factorial(i))
-}
+// Call sites read like contracts, not anonymous-number plumbing.
+base, spill := distribute(RequestCount(20))
+low, high, total := summarize([LatencyMs(42), LatencyMs(18), LatencyMs(77), LatencyMs(35)])
 
-q, r := divmod(17, 5)
-std.io.printf("17 / 5 = %d remainder %d\n", q, r)
-
-nums := [5, 2, 8, 1, 9, 3]
-lo, hi := minMax(nums)
-std.io.printf("min=%d  max=%d\n", lo, hi)
+std.io.printf("20 requests across 3 shards -> base=%d spill=%d\n", int(base), int(spill))
+std.io.printf("latency window -> min=%d max=%d total=%d\n", int(low), int(high), total)

@@ -1,7 +1,16 @@
-// The entry point of a Gengo program is the top level — no mandatory main()
-// function is required. The standard library is loaded explicitly with import(),
-// keeping the global namespace clean. Import syntax is borrowed from Go.
-// https://en.wikipedia.org/wiki/Entry_point
+// Quick orientation: the playground is wired and the runtime is alive.
 
 std := import("std")
-std.io.println("Hello, Gengo!")
+core := std.core
+
+checks := [
+    "nominal types for domain rules",
+    "variants for explicit state",
+    "recoverable runtime traps",
+]
+
+std.io.println("Gengo playground is live.")
+std.io.printf("loaded %d showcase topics:\n", core.len(checks))
+for i, check in checks {
+    std.io.printf("  %d. %s\n", i + 1, check)
+}

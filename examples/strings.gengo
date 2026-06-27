@@ -1,29 +1,24 @@
-// Strings in Gengo are Unicode-aware: len() counts runes (code points), not bytes.
-// Slicing and iteration operate on characters, not raw bytes. This rune-based
-// string model is borrowed from Go.
-// https://en.wikipedia.org/wiki/Unicode
+// Rune-aware strings plus builder-based assembly for incremental output.
 
 std := import("std")
-s    := std.string
+s := std.string
 core := std.core
 
-text := "Hello, 世界"
-std.io.printf("runes:  %d\n", core.len(text))
-std.io.printf("bytes:  %d\n", core.bytelen(text))
-std.io.printf("slice:  %s\n", text[0:5])
+actor := "Ada 🚀"
+std.io.printf("actor runes=%d bytes=%d\n", core.len(actor), core.bytelen(actor))
 
-std.io.println("characters:")
-for i, ch in text {
-    std.io.printf("  [%d] %s\n", i, ch)
+line := "  deploy service=playground region=eu-west labels=mobile,urgent  "
+clean := s.trim(line)
+parts := s.fields(clean)
+labels := s.split("mobile,urgent", ",")
+
+b := s.builder()
+b.write("command:")
+for part in parts {
+    b.write(" | ")
+    b.write(part)
 }
 
-// String operations from std.string
-csv := "alice,bob,carol,dave"
-parts := s.split(csv, ",")
-std.io.printf("\nsplit into %d parts\n", core.len(parts))
-std.io.println("joined:", s.join(parts, " | "))
-
-std.io.println(s.upper("gengo"))
-std.io.println(s.trim("  hello world  "))
-std.io.println("starts_with 'gen':", s.starts_with("gengo", "gen"))
-std.io.printf("index of 'world': %d\n", s.index_of("hello world", "world"))
+std.io.println(b.str())
+std.io.println("labels:", s.join(labels, " + "))
+std.io.println("contains region:", s.contains(clean, "region="))

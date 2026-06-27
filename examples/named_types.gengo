@@ -1,31 +1,29 @@
-// Named types give numeric values a distinct identity — adding metres to miles
-// becomes a type error rather than a silent bug. Optional range constraints are
-// enforced at runtime. This type-safety system is borrowed from Ada.
-// https://en.wikipedia.org/wiki/Ada_(programming_language)#Type_system
+// Named types, predicates, ranges, and cycles are core to Gengo's value model.
 
 std := import("std")
 
-type Celsius    float range -273.15..5000.0
-type Fahrenheit float range -459.67..9032.0
-type Month      int   range 1..12
+// Ports, hours, retries, and success rates are separate domains.
+type Port int range 1..65535
+type RetryCount int predicate func(n) { return n >= 0 and n <= 5 } message "must stay within host retry budget"
+type Hour int cycle 0..23
+type SuccessRate int range 0..100
+subtype HealthyRate SuccessRate range 95..100
 
-func toFahrenheit(c Celsius) Fahrenheit {
-    return Fahrenheit(float(c) * 9.0 / 5.0 + 32.0)
+func schedule(port Port, hour Hour, retries RetryCount) string {
+    // Formatting keeps the boundary conversions explicit without string noise.
+    return std.fmt.format(
+        "listen :%d at %d:00 retries=%d",
+        int(port),
+        int(hour),
+        int(retries),
+    )
 }
 
-// Celsius and Fahrenheit cannot be accidentally mixed — the types prevent it.
-temps := [Celsius(-40.0), Celsius(0.0), Celsius(20.0), Celsius(100.0)]
-for c in temps {
-    std.io.printf("%.1f C = %.1f F\n", float(c), float(toFahrenheit(c)))
-}
+// Cycle types make wraparound part of the type itself.
+next_window := Hour(23) + Hour(2)
+healthy := HealthyRate(98)
 
-// Succ and pred navigate within the valid range (called on the type, not the value).
-m := Month(6)
-std.io.printf("month %d -> prev=%d  next=%d\n", int(m), int(Month.pred(m)), int(Month.succ(m)))
-
-// Iterate all values of a named integer type.
-std.io.print("all months:")
-for mo in Month {
-    std.io.printf(" %d", int(mo))
-}
-std.io.println("")
+std.io.println(schedule(Port(8443), Hour(22), RetryCount(3)))
+std.io.printf("wrapped maintenance hour: %d\n", int(next_window))
+std.io.printf("healthy rate: %d%%\n", int(healthy))
+std.io.printf("valid ports live in [%d, %d]\n", int(Port.first), int(Port.last))

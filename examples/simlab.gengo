@@ -1,7 +1,5 @@
-// A discrete-event simulation combining structs, variants, interfaces, closures,
-// named types, and maps. Jobs are submitted to workers; busy workers cause retries
-// with exponential backoff; jobs that exhaust retries are dropped.
-// https://en.wikipedia.org/wiki/Discrete-event_simulation
+// A larger systems-style script: queue jobs, retry them with backoff, and let
+// structs, variants, interfaces, and named types carry the model cleanly.
 
 std := import("std")
 
@@ -151,7 +149,7 @@ func main() {
     workers := [mkWorker(1, 50), mkWorker(2, 80)]
     jobs := []
     for i := 0; i < 100; i++ {
-        jobs = std.core.append(jobs, mkJob(i, (i % 2) + 1, 10, "data"))
+        jobs = std.core.append(jobs, mkJob(i, (i rem 2) + 1, 10, "data"))
     }
     st := runSim(workers, jobs, Tick(1000))
     std.io.printf("Processed: %d, Dropped: %d, Peak queue: %d\n",

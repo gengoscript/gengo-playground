@@ -1,22 +1,27 @@
-// A closure is a function that captures variables from its surrounding scope,
-// keeping them alive even after the outer function has returned. This enables
-// stateful callbacks and factory functions without using global state.
-// https://en.wikipedia.org/wiki/Closure_(computer_programming)
+// Closures keep mutable state without pushing that state into globals.
 
 std := import("std")
 
-func makeCounter(start int) func() int {
-    n := start
-    return func() {
-        n += 1
-        return n
+func makeBudget(name string, credits int) func(int) bool {
+    remaining := credits
+    return func(cost int) {
+        if cost > remaining {
+            std.io.printf("%s rejects %d (left %d)\n", name, cost, remaining)
+            return false
+        }
+        remaining -= cost
+        std.io.printf("%s accepts %d (left %d)\n", name, cost, remaining)
+        return true
     }
 }
 
-// Two independent counters share the same code but each holds its own state.
-a := makeCounter(0)
-b := makeCounter(10)
+api := makeBudget("api", 12)
+exports := makeBudget("export", 7)
 
-for i := 0; i < 5; i++ {
-    std.io.printf("a=%d  b=%d\n", a(), b())
-}
+_ = api(3)
+_ = api(5)
+_ = api(6)
+
+_ = exports(4)
+_ = exports(2)
+_ = exports(3)

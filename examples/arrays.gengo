@@ -1,27 +1,24 @@
-// Arrays (slices) are ordered, resizable sequences. Gengo arrays are immutable
-// by default — core library functions return new arrays rather than mutating in
-// place, making data flow explicit and easy to reason about.
-// https://en.wikipedia.org/wiki/Dynamic_array
+// Array pipelines with std.array helpers instead of manual mutation.
 
 std := import("std")
-core := std.core
+a := std.array
 
-primes := [2, 3, 5, 7, 11, 13, 17, 19]
+// Each stage still talks about queue depths, not bare integers.
+type QueueDepth int range 0..1000
 
-std.io.printf("length: %d\n", core.len(primes))
-std.io.printf("first:  %d\n", primes.first())
-std.io.printf("last:   %d\n", primes.last())
-std.io.println("slice [2:5]:", primes[2:5])
+queue_depths := [QueueDepth(3), QueueDepth(11), QueueDepth(7), QueueDepth(18), QueueDepth(25), QueueDepth(9)]
 
-// append and remove return new arrays; the original is unchanged.
-more  := core.append(primes, 23)
-fewer := core.remove(primes, 0)
-std.io.printf("after append: last=%d  len=%d\n",  more.last(),   core.len(more))
-std.io.printf("after remove: first=%d len=%d\n", fewer.first(), core.len(fewer))
+needs_action := func(v QueueDepth) { return v >= QueueDepth(10) }
+// Arithmetic briefly unwraps, then returns to the constrained domain.
+reserve_headroom := func(v QueueDepth) { return QueueDepth(int(v) + 2) }
+sum := func(acc int, v QueueDepth) { return acc + int(v) }
 
-// Filter: build a new array from matching elements.
-evens := []
-for n in primes {
-    if n % 2 == 0 { evens = core.append(evens, n) }
-}
-std.io.println("even primes:", evens)
+priority := a.filter(queue_depths, needs_action)
+buffered := a.map(priority, reserve_headroom)
+total := a.reduce(buffered, sum, 0)
+
+std.io.println("queue depths:", queue_depths)
+std.io.println("priority queues:", priority)
+std.io.println("buffered queues:", buffered)
+std.io.println("maintenance windows:", a.chunk(buffered, 2))
+std.io.printf("total buffered work: %d\n", total)

@@ -97,6 +97,7 @@ let autoRunTimeout = null;
 let isRunning = false;
 let hasStderr = false;
 let assetManifest = null;
+const mobileMediaQuery = window.matchMedia("(max-width: 960px)");
 
 runBtn.disabled = true;
 shareBtn.disabled = true;
@@ -170,39 +171,64 @@ document.addEventListener("touchend", () => {
   isDragging = false;
 });
 
-// Layout Orientation Toggle
-orientationBtn.onclick = () => {
-  if (workspace.classList.contains("split-vertical")) {
-    workspace.classList.remove("split-vertical");
-    workspace.classList.add("split-horizontal");
-    orientLine.setAttribute("x1", "3");
-    orientLine.setAttribute("y1", "12");
-    orientLine.setAttribute("x2", "21");
-    orientLine.setAttribute("y2", "12");
-  } else {
-    workspace.classList.remove("split-horizontal");
-    workspace.classList.add("split-vertical");
+function updateOrientationIcon(isVertical) {
+  if (isVertical) {
     orientLine.setAttribute("x1", "12");
     orientLine.setAttribute("y1", "3");
     orientLine.setAttribute("x2", "12");
     orientLine.setAttribute("y2", "21");
+  } else {
+    orientLine.setAttribute("x1", "3");
+    orientLine.setAttribute("y1", "12");
+    orientLine.setAttribute("x2", "21");
+    orientLine.setAttribute("y2", "12");
   }
+}
+
+function setWorkspaceOrientation(orientation, { persist = true } = {}) {
+  const isVertical = orientation === "vertical";
+  workspace.classList.toggle("split-vertical", isVertical);
+  workspace.classList.toggle("split-horizontal", !isVertical);
+  updateOrientationIcon(isVertical);
   editorPane.style.flex = "50%";
   outputPane.style.flex = "50%";
   if (editor) editor.layout();
-  localStorage.setItem("gengo_playground_layout", workspace.classList.contains("split-vertical") ? "vertical" : "horizontal");
+  if (persist) {
+    localStorage.setItem("gengo_playground_layout", isVertical ? "vertical" : "horizontal");
+  }
+}
+
+function applyResponsiveLayout() {
+  const savedLayout = localStorage.getItem("gengo_playground_layout") || "vertical";
+  const orientation = mobileMediaQuery.matches ? "horizontal" : savedLayout;
+  setWorkspaceOrientation(orientation, { persist: !mobileMediaQuery.matches });
+}
+
+function applyResponsiveEditorOptions() {
+  if (!editor) return;
+  const minimapEnabled = !mobileMediaQuery.matches && localStorage.getItem("gengo_playground_minimap") === "true";
+  editor.updateOptions({
+    minimap: { enabled: minimapEnabled },
+    lineNumbersMinChars: mobileMediaQuery.matches ? 2 : 3,
+  });
+}
+
+// Layout Orientation Toggle
+orientationBtn.onclick = () => {
+  const nextOrientation = workspace.classList.contains("split-vertical") ? "horizontal" : "vertical";
+  setWorkspaceOrientation(nextOrientation);
 };
 
 // Apply layout on startup
-const savedLayout = localStorage.getItem("gengo_playground_layout") || "vertical";
-if (savedLayout === "horizontal") {
-  workspace.classList.remove("split-vertical");
-  workspace.classList.add("split-horizontal");
-  orientLine.setAttribute("x1", "3");
-  orientLine.setAttribute("y1", "12");
-  orientLine.setAttribute("x2", "21");
-  orientLine.setAttribute("y2", "12");
-}
+applyResponsiveLayout();
+mobileMediaQuery.addEventListener("change", applyResponsiveLayout);
+mobileMediaQuery.addEventListener("change", applyResponsiveEditorOptions);
+window.addEventListener("resize", () => {
+  if (editor) {
+    editor.layout();
+    applyResponsiveEditorOptions();
+  }
+});
 
 // Settings Drawer Overlay Toggling
 function openSettingsDrawer() {
@@ -292,17 +318,17 @@ require(['vs/editor/editor.main'], function () {
       'true', 'false', 'null',
       'if', 'else', 'for', 'in', 'switch', 'case', 'default', 'break', 'continue', 'return',
       'func', 'struct', 'interface', 'type', 'subtype', 'variant', 'enum', 'const', 'var', 'pub',
-      'and', 'or', 'not',
+      'and', 'or', 'not', 'div', 'rem', 'mod',
       'import', 'defer', 'assert', 'trap', 'test',
       'range', 'cycle', 'predicate', 'message'
     ],
     typeKeywords: ['int', 'float', 'decimal', 'bool', 'string', 'rune', 'any', 'error'],
     operators: [
       '=', '>', '<', '~', '?', ':', '==', '<=', '>=', '!=',
-      '++', '--', '+', '-', '*', '/', '&', '|', '^', '%',
-      '<<', '>>', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', ':=', '..', '...'
+      '++', '--', '+', '-', '*', '/', '&', '|', '^',
+      '<<', '>>', '+=', '-=', '*=', '/=', '&=', '|=', '^=', ':=', '..', '...'
     ],
-    symbols: /[=><!~?:&|+\-*\/\^%]+/,
+    symbols: /[=><!~?:&|+\-*\/\^]+/,
     escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
     tokenizer: {
       root: [
@@ -448,6 +474,8 @@ require(['vs/editor/editor.main'], function () {
       padding: { top: 16 },
       fixedOverflowWidgets: true
     });
+
+    applyResponsiveEditorOptions();
 
     // Monaco-specific keyboard shortcuts inside the editor frame
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function () {

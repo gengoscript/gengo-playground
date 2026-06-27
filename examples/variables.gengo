@@ -1,24 +1,39 @@
-// Variables hold typed values; Gengo infers the type from the initialiser.
-// Integer division yields an exact fraction rather than truncating — use int()
-// to discard the fractional part. The := short declaration is borrowed from Go.
-// https://en.wikipedia.org/wiki/Type_inference
+// Basic bindings plus the arithmetic split:
+// / is ordinary division, while div/rem/mod are the explicit integer operators.
+// div = truncating division, rem = remainder with dividend sign,
+// mod = mathematical modulo.
 
 std := import("std")
 
-x    := 42
-pi   := 3.14159
-msg  := "Gengo"
-flag := true
+// These are distinct domains, not aliases.
+type Region string predicate func(s) { return s == "eu-north" or s == "us-east" }
+type WorkerCount int range 0..32
+type RetryBudget int range 0..10
 
-std.io.printf("x=%d  pi=%.5f  msg=%s\n", x, pi, msg)
-std.io.println("flag:", flag)
+// Invalid values fail at construction.
+const region := Region("eu-north")
+var active_workers WorkerCount = WorkerCount(3)
+retry_budget := RetryBudget(4)
+healthy := true
 
-// Integer division is exact — not truncated like C, Go, or Python 2.
-a := 10
-b := 3
-std.io.printf("10 / 3      = %f\n", a / b)
-std.io.printf("int(10 / 3) = %d\n", int(a / b))
+// Conversions back to plain values are explicit at the boundary.
+std.io.printf(
+    "region=%s workers=%d retry-budget=%d\n",
+    string(region),
+    int(active_workers),
+    int(retry_budget),
+)
 
-// Integers and floats are distinct — explicit conversion is required.
-std.io.printf("float(42) = %f\n", float(x))
-std.io.printf("int(pi)   = %d\n", int(pi))
+requests := 17
+shards := 5
+// / and div are different operations.
+std.io.printf("17 / 5 = %f\n", requests / shards)
+std.io.printf("17 div 5 = %d\n", requests div shards)
+std.io.printf("17 rem 5 = %d\n", requests rem shards)
+std.io.printf("-17 mod 5 = %d\n", (-requests) mod shards)
+std.io.printf("workers as float = %.1f\n", float(int(active_workers)))
+
+// Comparisons stay typed too.
+if healthy and active_workers > WorkerCount(0) {
+    std.io.println("cluster status: ready")
+}

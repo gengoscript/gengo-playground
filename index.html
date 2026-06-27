@@ -74,7 +74,10 @@
         radial-gradient(circle at 95% 5%, var(--bg-glow-2), transparent 28rem),
         var(--bg);
       color: var(--fg);
+      min-height: 100vh;
+      min-height: 100dvh;
       height: 100vh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -101,10 +104,11 @@
 
     header {
       height: var(--header-height);
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
-      justify-content: space-between;
       padding: 0 24px;
+      gap: 16px;
       border-bottom: 1px solid var(--panel-border);
       background: var(--glass-bg);
       backdrop-filter: var(--glass-blur);
@@ -115,6 +119,7 @@
     .logo-container {
       display: flex;
       align-items: center;
+      justify-self: start;
       text-decoration: none;
       color: var(--fg);
       gap: 12px;
@@ -159,6 +164,20 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      min-width: 0;
+    }
+
+    .controls-group.primary-controls {
+      flex: 0 1 auto;
+      white-space: nowrap;
+      justify-self: center;
+    }
+
+    .controls-group.secondary-controls {
+      flex: 0 1 auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      justify-self: end;
     }
 
     .dropdown-container {
@@ -308,6 +327,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-wrap: wrap;
     }
 
     .pane-action-btn {
@@ -330,6 +350,39 @@
     .pane-action-btn svg {
       width: 13px;
       height: 13px;
+    }
+
+    .pane-action-btn.labelled {
+      border: 1px solid var(--panel-border);
+      padding: 6px 10px;
+      min-height: 30px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .pane-action-btn.labelled.primary {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+
+    .pane-action-btn.labelled.primary:hover:not(:disabled) {
+      background: transparent;
+      color: var(--fg);
+    }
+
+    .pane-action-btn.labelled.secondary {
+      background: transparent;
+      color: var(--fg);
+      border-color: var(--panel-border);
+    }
+
+    .pane-action-btn.labelled.secondary:hover:not(:disabled) {
+      border-color: var(--fg);
+      background: rgba(127, 127, 127, 0.08);
     }
 
     #editor {
@@ -725,6 +778,165 @@
       transform: translateX(-50%) translateY(0);
       opacity: 1;
     }
+
+    @media (max-width: 960px) {
+      body {
+        overflow: auto;
+      }
+
+      header {
+        display: flex;
+        position: sticky;
+        top: 0;
+        height: auto;
+        min-height: var(--header-height);
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo-container {
+        width: 100%;
+      }
+
+      .logo {
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+      }
+
+      .logo-separator,
+      .logo-sub {
+        display: none;
+      }
+
+      .controls-group.primary-controls {
+        flex: 1 1 auto;
+        width: 100%;
+        flex-wrap: nowrap;
+      }
+
+      .controls-group.secondary-controls {
+        flex: 1 1 100%;
+        width: 100%;
+        justify-self: auto;
+        margin-left: 0;
+        justify-content: flex-start;
+      }
+
+      .controls-group.primary-controls .dropdown-container {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .controls-group.primary-controls .dropdown-container select {
+        width: 100%;
+      }
+
+      select,
+      button {
+        min-height: 36px;
+      }
+
+      #download-btn,
+      #share,
+      #run,
+      #stop {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+
+      .settings-panel {
+        width: min(320px, 100vw);
+        right: calc(-1 * min(320px, 100vw));
+      }
+
+      .modal-container {
+        width: min(440px, calc(100vw - 24px));
+      }
+
+      main {
+        min-height: 0;
+        flex: 1 1 auto;
+      }
+
+      .editor-container,
+      .output-container {
+        min-width: 0;
+        min-height: 180px;
+      }
+
+      .pane-header,
+      .status-bar {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .pane-header {
+        height: auto;
+        min-height: 38px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .pane-actions {
+        margin-left: auto;
+      }
+
+      .status-bar {
+        height: auto;
+        min-height: 28px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      #version,
+      #cursor-pos,
+      #exec-info {
+        font-size: 10px;
+      }
+
+      main.split-vertical .divider {
+        width: 10px;
+      }
+
+      main.split-horizontal .divider {
+        height: 10px;
+      }
+
+      .divider-handle {
+        opacity: 1;
+      }
+
+      .panel-content,
+      .modal-body {
+        padding: 16px;
+      }
+
+      .shortcut-row {
+        align-items: flex-start;
+        gap: 10px;
+        flex-direction: column;
+      }
+
+      .toast {
+        width: calc(100vw - 24px);
+        max-width: 320px;
+        bottom: 16px;
+      }
+
+      #editor {
+        min-height: 44vh;
+      }
+
+      #out {
+        min-height: 22vh;
+      }
+    }
   </style>
 </head>
 <body>
@@ -742,27 +954,27 @@
       <span class="logo-sub">playground</span>
     </a>
     
-    <div class="controls-group">
+    <div class="controls-group primary-controls">
       <!-- Example Selection -->
       <div class="dropdown-container">
         <select id="examples" title="Load a Gengoscript example program">
           <option value="" disabled hidden>Examples</option>
-          <option value="hello">Hello World</option>
-          <option value="variables">Variables &amp; Types</option>
-          <option value="control_flow">Control Flow</option>
-          <option value="functions">Functions</option>
-          <option value="closures">Closures</option>
-          <option value="structs">Structs &amp; Methods</option>
-          <option value="interfaces">Interfaces</option>
-          <option value="enums">Enums</option>
-          <option value="variants">Variants</option>
-          <option value="named_types">Named Types</option>
-          <option value="arrays">Arrays</option>
-          <option value="maps">Maps</option>
-          <option value="strings">Strings</option>
-          <option value="multiline">Multiline Strings</option>
-          <option value="errors">Error Handling</option>
-          <option value="defer_recover">Defer &amp; Recover</option>
+          <option value="hello">Launch Report</option>
+          <option value="variables">Runtime Primitives</option>
+          <option value="control_flow">Health Scan</option>
+          <option value="functions">Shard Planner</option>
+          <option value="closures">Budget Closures</option>
+          <option value="structs">Order Structs</option>
+          <option value="interfaces">Shared Behaviour</option>
+          <option value="enums">Workflow Stages</option>
+          <option value="variants">Policy Decisions</option>
+          <option value="named_types">Domain Types</option>
+          <option value="arrays">Array Pipelines</option>
+          <option value="maps">Config Overlay</option>
+          <option value="strings">Text Processing</option>
+          <option value="multiline">Embedded Text</option>
+          <option value="errors">Error Values</option>
+          <option value="defer_recover">Trap Recovery</option>
           <option value="simlab">Simulation</option>
           <option value="maze">Maze</option>
           <option value="pi">Compute π</option>
@@ -778,7 +990,7 @@
     </div>
 
     <!-- Right Side Actions -->
-    <div class="controls-group">
+    <div class="controls-group secondary-controls">
       <!-- Keyboard Shortcuts -->
       <button id="shortcuts-btn" class="secondary icon-only" title="Keyboard shortcuts">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -815,29 +1027,6 @@
         </svg>
       </button>
 
-      <!-- Code URL Share -->
-      <button id="share" class="secondary" title="Copy shareable playground URL">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-          <polyline points="16 6 12 2 8 6"></polyline>
-          <line x1="12" y1="2" x2="12" y2="15"></line>
-        </svg>
-        <span>Share</span>
-      </button>
-
-      <!-- Execution Controls -->
-      <button id="run" title="Compile &amp; execute script (Ctrl+Enter)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-        Run
-      </button>
-      <button id="stop" class="secondary" disabled title="Stop program execution">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-        </svg>
-        Stop
-      </button>
     </div>
   </header>
 
@@ -850,11 +1039,30 @@
           <span>script.gengo</span>
         </div>
         <div class="pane-actions">
+          <button id="run" class="pane-action-btn labelled primary" title="Compile &amp; execute script (Ctrl+Enter)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Run</span>
+          </button>
+          <button id="stop" class="pane-action-btn labelled secondary" disabled title="Stop program execution">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+            </svg>
+            <span>Stop</span>
+          </button>
           <button id="download-btn" class="pane-action-btn" title="Download code file">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+          <button id="share" class="pane-action-btn" title="Copy shareable playground URL">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
             </svg>
           </button>
         </div>

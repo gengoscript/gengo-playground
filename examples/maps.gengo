@@ -1,28 +1,32 @@
-// Maps (hash maps) associate keys with values for O(1) average lookup.
-// Map literals use quoted string keys — bare identifiers look up variables,
-// not create implicit string keys. This matches Go semantics, not JavaScript.
-// https://en.wikipedia.org/wiki/Hash_table
+// Config overlays are a natural map use-case in an embedded scripting language.
 
 std := import("std")
 core := std.core
 
-capitals := {
-    "France":  "Paris",
-    "Germany": "Berlin",
-    "Japan":   "Tokyo",
-    "Brazil":  "Brasilia",
+// Even a map-heavy script can keep its boundaries typed.
+type Region string predicate func(s) { return s == "eu-west" or s == "us-east" }
+
+base := {
+    "timeout_ms": 250,
+    "retries": 2,
 }
 
-std.io.printf("entries: %d\n", core.len(capitals))
-std.io.printf("France -> %s\n", capitals["France"])
-std.io.println("has Japan:", core.has(capitals, "Japan"))
-std.io.println("has Canada:", core.has(capitals, "Canada"))
-
-// Iterate keys (map order is not guaranteed).
-for country in core.keys(capitals) {
-    std.io.printf("  %s -> %s\n", country, capitals[country])
+overrides := {
+    "timeout_ms": 500,
+    "workers": 6,
 }
 
-// Delete returns the deleted value; the map is updated in place.
-_ = core.delete(capitals, "Brazil")
-std.io.printf("after delete: %d entries\n", core.len(capitals))
+region := Region("eu-west")
+effective := core.clone(base)
+for key in core.keys(overrides) {
+    effective[key] = overrides[key]
+}
+
+std.io.println("region:", region)
+std.io.println("effective config:", effective)
+std.io.println("has workers:", core.has(effective, "workers"))
+std.io.printf("timeout_ms=%d\n", effective["timeout_ms"])
+
+removed := core.delete(effective, "workers")
+std.io.println("removed workers override:", removed)
+std.io.println("final keys:", core.keys(effective))

@@ -1,38 +1,50 @@
-// Structs group related fields into a single named type. Methods are ordinary
-// functions with a receiver — any user-defined named type can have them, not
-// just structs. This receiver-based method syntax is borrowed from Go.
-// https://en.wikipedia.org/wiki/Struct_(C_programming_language)
+// Structs let scripts model business data directly instead of juggling maps.
 
 std := import("std")
+core := std.core
 
-type Point struct { x int, y int }
+// Order id, sku, quantity, and price are separate domains.
+type OrderId string predicate func(s) { return std.string.starts_with(s, "PO-") }
+type SKU string predicate func(s) { return std.core.len(s) >= 3 }
+type Quantity int range 1..1000
+type UnitPrice int range 0..100000
 
-func (p Point) scale(f int) Point {
-    return Point{x: p.x * f, y: p.y * f}
+type LineItem struct {
+    sku SKU,
+    qty Quantity,
+    unit_price UnitPrice,
 }
 
-func (p Point) add(q Point) Point {
-    return Point{x: p.x + q.x, y: p.y + q.y}
+type Order struct {
+    const id OrderId,
+    items []LineItem,
 }
 
-func (p Point) squaredDist(q Point) int {
-    dx := q.x - p.x
-    dy := q.y - p.y
-    return dx*dx + dy*dy
+func (o Order) add(item LineItem) Order {
+    return Order{
+        id: o.id,
+        items: core.append(o.items, item),
+    }
 }
 
-type Rect struct { min Point, max Point }
+func (o Order) totalUnits() int {
+    total := 0
+    for item in o.items {
+        total += int(item.qty)
+    }
+    return total
+}
 
-func (r Rect) width()  int { return r.max.x - r.min.x }
-func (r Rect) height() int { return r.max.y - r.min.y }
-func (r Rect) area()   int { return r.width() * r.height() }
+func (o Order) totalValue() int {
+    total := 0
+    for item in o.items {
+        total += int(item.qty) * int(item.unit_price)
+    }
+    return total
+}
 
-p := Point{x: 3, y: 4}
-q := p.scale(2)
-std.io.printf("p=(%d,%d)  2p=(%d,%d)\n", p.x, p.y, q.x, q.y)
+order := Order{ id: OrderId("PO-1042"), items: [] }
+order = order.add(LineItem{ sku: SKU("keyboard"), qty: Quantity(2), unit_price: UnitPrice(89) })
+order = order.add(LineItem{ sku: SKU("dock"), qty: Quantity(1), unit_price: UnitPrice(149) })
 
-origin := Point{x: 0, y: 0}
-std.io.printf("squared dist to origin: %d\n", p.squaredDist(origin))
-
-r := Rect{min: Point{x: 1, y: 1}, max: Point{x: 7, y: 4}}
-std.io.printf("rect %dx%d  area=%d\n", r.width(), r.height(), r.area())
+std.io.printf("order %s -> units=%d value=%d\n", string(order.id), order.totalUnits(), order.totalValue())

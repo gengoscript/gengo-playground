@@ -1,41 +1,42 @@
-// Defer schedules a function to run when the surrounding function exits,
-// regardless of how — useful for guaranteed cleanup. Recover catches runtime
-// traps (range violations, panics) from within a deferred function.
-// Both defer and recover are borrowed from Go.
-// https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization
+// Defer/recover is for runtime traps that arise while lifting unchecked input
+// into stronger domain types. Ordinary business failures should stay error values.
 
 std := import("std")
+core := std.core
 
-// Defer runs at function exit even if the function returns early.
-func processFile(name string) {
-    defer std.io.printf("closed: %s\n", name)
-    std.io.printf("opened: %s\n", name)
-    std.io.println("processing...")
-}
+type Port int range 1..65535
+type RetryCount int range 0..5
 
-processFile("data.csv")
-processFile("report.txt")
-
-// Recover catches a runtime trap — here a named-type range violation.
-type Percent int range 0..100
-
-func process(values []int) {
+func activate_listener(raw_port int, raw_retries int) (out string) {
     defer func() {
-        err := std.core.recover()
-        if err != null {
-            std.io.println("recovered:", err)
+        err := core.recover()
+        if core.is_error(err) {
+            out = std.fmt.format(
+                "rejected port=%d retries=%d -> %s",
+                raw_port,
+                raw_retries,
+                std.conv.to_string(err),
+            )
         }
     }()
-    for v in values {
-        p := Percent(v)
-        std.io.printf("  %d%%\n", int(p))
-    }
+
+    // Construction is where bad external input trips the runtime trap.
+    port := Port(raw_port)
+    retries := RetryCount(raw_retries)
+    return std.fmt.format(
+        "listening on :%d with %d retries",
+        int(port),
+        int(retries),
+    )
 }
 
-std.io.println("valid batch:")
-process([10, 50, 75, 100])
+configs := [
+    [443, 2],
+    [8443, 5],
+    [70000, 2],
+    [8080, 9],
+]
 
-std.io.println("invalid batch (150 is out of 0..100):")
-process([10, 50, 150])
-
-std.io.println("program continues after trap")
+for cfg in configs {
+    std.io.println(activate_listener(cfg[0], cfg[1]))
+}
